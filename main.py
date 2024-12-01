@@ -12,7 +12,7 @@ ALERT_INTERVAL = 90
 # Video Capture
 cap = cv2.VideoCapture(0)
 
-# تابع برای ارسال هشدارها
+
 def send_alerts(message):
     send_telegram_alert(message)
     send_email_alert("Alert: Fire Detected", message)
@@ -28,11 +28,10 @@ while True:
 
     if fire_detected and time.time() - last_alert_time > ALERT_INTERVAL:
         last_alert_time = time.time()
-        # ایجاد ترد برای ارسال هشدار
+        # use thread
         alert_thread = threading.Thread(target=send_alerts, args=("Fire detected in the area!",))
         alert_thread.start()
 
-    # نمایش فریم
     cv2.imshow("Fire Detection", frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
