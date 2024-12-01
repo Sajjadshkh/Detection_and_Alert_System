@@ -1,20 +1,14 @@
 import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from utils.config import SENDER_EMAIL, SENDER_PASSWORD, RECIPIENT_EMAIL
 
-def send_email_alert(recipient_email, subject, body, sender_email, sender_password):
-    message = MIMEMultipart()
-    message["From"] = sender_email
-    message["To"] = recipient_email
-    message["Subject"] = subject
-    message.attach(MIMEText(body, "plain"))
-
+def send_email_alert(subject, message):
     try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
-        server.login(sender_email, sender_password)
-        server.sendmail(sender_email, recipient_email, message.as_string())
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        text = f"Subject: {subject}\n\n{message}"
+        server.sendmail(SENDER_EMAIL, RECIPIENT_EMAIL, text)
         server.quit()
-        print("Email sent successfully.")
+        print("Email alert sent successfully!")
     except Exception as e:
         print(f"Failed to send email: {e}")

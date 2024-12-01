@@ -1,12 +1,13 @@
 import logging
 
-def setup_logger():
-    logger = logging.getLogger("fire_detection")
-    logger.setLevel(logging.INFO)
+# Set up logging configuration
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    handler.setFormatter(formatter)
+def log_info(message):
+    logging.info(message)
 
-    logger.addHandler(handler)
-    return logger
+def log_error(message):
+    logging.error(message)
+
+def log_warning(message):
+    logging.warning(message)

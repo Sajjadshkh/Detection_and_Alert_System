@@ -1,14 +1,14 @@
 from twilio.rest import Client
+from utils.config import TWILIO_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, RECIPIENT_PHONE_NUMBER
 
-def send_sms_alert(account_sid, auth_token, from_phone, to_phone, message):
-    client = Client(account_sid, auth_token)
-
+def send_sms_alert(message):
     try:
-        sms = client.messages.create(
+        client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
+        message = client.messages.create(
             body=message,
-            from_=from_phone,
-            to=to_phone
+            from_=TWILIO_PHONE_NUMBER,
+            to=RECIPIENT_PHONE_NUMBER
         )
-        print(f"SMS sent successfully. SID: {sms.sid}")
+        print("SMS alert sent!")
     except Exception as e:
         print(f"Failed to send SMS: {e}")
