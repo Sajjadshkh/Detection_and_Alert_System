@@ -32,10 +32,10 @@ def send_telegram_alert(message, max_retries=3, delay=5):
                 print("Failed to send telegram message after multiple attempts.")
                 return  # Exit after max retries
 
-if __name__ == "__main__":
+def start_polling():
     while True:
         try:
-            bot.polling()
+            bot.polling(none_stop=True)
         except Exception as e:
             print(f"Error in bot.polling: {e}")
-            time.sleep(5)  # Wait for 5 seconds before retrying
+            time.sleep(5)

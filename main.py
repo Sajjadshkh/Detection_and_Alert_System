@@ -12,6 +12,7 @@ from threading import Lock
 from fire_detection import detect_fire
 from notifications import send_telegram_alert, send_email_alert, send_sms_alert
 from utils.logger import log_info
+from notifications.telegram_alert import start_polling
 
 fire_detected = False
 last_alert_time = 0
@@ -29,6 +30,11 @@ def send_alerts(message):
         send_email_alert("Alert: Fire Detected", message)
         send_sms_alert(message)
         log_info(f"Alert sent: {message}")
+
+# new thread for run polling
+if __name__ == "__main__":
+    polling_thread = threading.Thread(target=start_polling)
+    polling_thread.start()
 
 while True:
     ret, frame = cap.read()
