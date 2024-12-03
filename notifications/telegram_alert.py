@@ -1,3 +1,9 @@
+import sys, os
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
 import telebot
 import time
 from utils.config import TELEGRAM_API_TOKEN, CHAT_ID
@@ -12,10 +18,9 @@ def send_telegram_alert(message, max_retries=3, delay=5):
     attempt = 0
     while attempt < max_retries:
         try:
-            # ارسال پیام به تلگرام
-            bot.send_message(CHAT_ID, message)  # پیام به چت ارسال می‌شود
+            bot.send_message(CHAT_ID, message) 
             print("Telegram alert sent!")
-            return  # پس از ارسال موفق پیام، از حلقه خارج می‌شود
+            return  # Exit after sending the telegram successfully
         except Exception as e:
             attempt += 1
             print(f"Attempt {attempt} failed: {e}")
@@ -25,10 +30,12 @@ def send_telegram_alert(message, max_retries=3, delay=5):
                 time.sleep(delay)
             else:
                 print("Failed to send telegram message after multiple attempts.")
-                return  # پس از تلاش‌های متعدد، از حلقه خارج می‌شود
+                return  # Exit after max retries
 
 if __name__ == "__main__":
-    try:
-        bot.polling()
-    except Exception as e:
-        print(f"Error in bot.polling: {e}")
+    while True:
+        try:
+            bot.polling()
+        except Exception as e:
+            print(f"Error in bot.polling: {e}")
+            time.sleep(5)  # Wait for 5 seconds before retrying

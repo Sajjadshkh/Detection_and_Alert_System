@@ -1,6 +1,14 @@
+import sys
+import os
+
+project_root = os.path.abspath(os.path.dirname(__file__))
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
 import cv2
 import time
 import threading
+from threading import Lock
 from fire_detection import detect_fire
 from notifications import send_telegram_alert, send_email_alert, send_sms_alert
 from utils.logger import log_info
@@ -13,11 +21,14 @@ ALERT_INTERVAL = 90
 cap = cv2.VideoCapture(0)
 
 
+alert_lock = Lock()
+
 def send_alerts(message):
-    send_telegram_alert(message)
-    send_email_alert("Alert: Fire Detected", message)
-    send_sms_alert(message)
-    log_info(f"Alert sent: {message}")
+    with alert_lock:
+        send_telegram_alert(message)
+        send_email_alert("Alert: Fire Detected", message)
+        send_sms_alert(message)
+        log_info(f"Alert sent: {message}")
 
 while True:
     ret, frame = cap.read()
