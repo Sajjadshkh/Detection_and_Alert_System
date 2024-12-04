@@ -101,7 +101,6 @@ try:
         # Exit on 'q' key press
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        
 except Exception as e:
     print(f"Error in main loop: {e}")
 finally:
