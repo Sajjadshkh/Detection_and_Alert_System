@@ -12,7 +12,8 @@ from notifications import send_telegram_alert, send_email_alert, send_sms_alert
 from notifications.telegram_alert import start_polling
 from notifications.telegram_alert import retry_pending_telegram
 from notifications.email_alert import retry_pending_emails
-from utils.database import create_table, save_email, save_telegram
+from notifications.sms_alert import retry_pending_sms
+from utils.database import create_table, save_email, save_telegram, save_sms
 
 # Initialize variables
 fire_detected = False
@@ -46,6 +47,7 @@ def send_alerts(message):
             log_info("Internet not connected. Saving alert to database.\n")
             save_telegram(message)  # Save telegram message
             save_email("Alert: Fire Detected", message)  # Save email message
+            save_sms(message)   # Save sms message
 
 def process_alerts():
     while True:
@@ -74,6 +76,7 @@ def start_thread(target_function, args=None, join_thread=False, retry_interval=5
 polling_thread = start_thread(start_polling)
 retry_thread_email = start_thread(retry_pending_emails)
 retry_thread_telegram = start_thread(retry_pending_telegram)
+retry_thread_sms = start_thread(retry_pending_sms)
 
 # Start alert processing thread
 alert_processor = threading.Thread(target=process_alerts, daemon=True)
