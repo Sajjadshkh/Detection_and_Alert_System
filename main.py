@@ -8,12 +8,11 @@ from threading import Lock
 from fire_detection import detect_fire
 from utils.logger import log_info
 from utils.internet_check import is_connected_to_internet
-from notifications import send_telegram_alert, send_email_alert, send_sms_alert
-from notifications.telegram_alert import start_polling
-from notifications.telegram_alert import retry_pending_telegram
+from notifications.telegram_alert import start_polling, retry_pending_telegram
 from notifications.email_alert import retry_pending_emails
 from notifications.sms_alert import retry_pending_sms
 from utils.database import create_table, save_email, save_telegram, save_sms
+from notifications.location_alert import send_location_alert
 
 # Initialize variables
 fire_detected = False
@@ -37,10 +36,8 @@ def send_alerts(message):
     with alert_lock:
         if is_connected_to_internet():
             try:
-                send_telegram_alert(message)
-                send_email_alert("Alert: Fire Detected", message)
-                send_sms_alert(message)
-                log_info(f"Alert sent: {message}")
+                send_location_alert(message) 
+                log_info(f"Alert with location sent: {message}")
             except Exception as e:
                 log_info(f"Failed to send alert: {e}\n")
         else:
