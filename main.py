@@ -23,7 +23,7 @@ create_table()
 # Initialize the camera
 cap = cv2.VideoCapture(0)
 if not cap.isOpened():
-    print("Error: Could not open video source.")
+    print("Error: Could not open video source.\n")
     sys.exit()
 
 # Queue for managing alerts
@@ -41,9 +41,9 @@ def send_alerts(message):
                 send_sms_alert(message)
                 log_info(f"Alert sent: {message}")
             except Exception as e:
-                log_info(f"Failed to send alert: {e}")
+                log_info(f"Failed to send alert: {e}\n")
         else:
-            log_info("Internet not connected. Saving alert to database.")
+            log_info("Internet not connected. Saving alert to database.\n")
             save_telegram(message)  # Save telegram message
             save_email("Alert: Fire Detected", message)  # Save email message
 
@@ -53,7 +53,7 @@ def process_alerts():
         try:
             send_alerts(message)
         except Exception as e:
-            log_info(f"Error processing alert: {e}")
+            log_info(f"Error processing alert: {e}\n")
         alert_queue.task_done()
 
 # General thread starting function
@@ -66,7 +66,7 @@ def start_thread(target_function, args=None, join_thread=False, retry_interval=5
             thread.join()
         return thread
     except Exception as e:
-        print(f"Error starting thread for {target_function.__name__}: {e}")
+        print(f"Error starting thread for {target_function.__name__}: {e}\n")
         time.sleep(retry_interval)
         return None
 
@@ -84,7 +84,7 @@ try:
     while True:
         ret, frame = cap.read()
         if not ret:
-            print("Failed to grab frame. Exiting...")
+            print("Failed to grab frame. Exiting...\n")
             break
 
         # Detect fire in the frame
@@ -101,9 +101,9 @@ try:
         # Exit on 'q' key press
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        
+
 except Exception as e:
-    print(f"Error in main loop: {e}")
+    print(f"Error in main loop: {e}\n")
 finally:
     cap.release()
     cv2.destroyAllWindows()

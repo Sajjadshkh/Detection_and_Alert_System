@@ -36,11 +36,11 @@ def send_email_alert(subject, message, max_retries=3, delay=5):
                 server.sendmail(SENDER_EMAIL, RECIPIENT_EMAIL, msg.as_string())
                 server.quit()
 
-                log_info(f"Email alert sent successfully: {subject}")
+                log_info(f"Email alert sent successfully: {subject}\n")
                 return
             else:
                 save_email(subject, message)
-                log_info(f"Internet is not connected. Email alert saved to database: {subject}")
+                log_info(f"Internet is not connected. Email alert saved to database: {subject}\n")
                 return
         except Exception as e:
             attempt += 1
@@ -48,7 +48,7 @@ def send_email_alert(subject, message, max_retries=3, delay=5):
             if attempt < max_retries:
                 time.sleep(delay)
             else:
-                log_info(f"Failed to send email after {max_retries} attempts. Saving to database.")
+                log_info(f"Failed to send email after {max_retries} attempts. Saving to database.\n")
                 save_email(subject, message)
                 return
 
@@ -59,22 +59,22 @@ def retry_pending_emails():
     while True:
         try:
             if is_connected_to_internet():
-                log_info("Internet connected. Checking for pending emails.")
+                log_info("Internet connected. Checking for pending emails.\n")
                 pending_emails = get_pending_emails()
 
                 if not pending_emails:
-                    log_info("No pending emails to send.")
+                    log_info("No pending emails to send.\n")
                 else:
                     for email in pending_emails:
                         email_id, subject, body = email
                         try:
                             send_email_alert(subject, body)
                             mark_email_as_sent(email_id)
-                            log_info(f"Pending email with ID {email_id} sent successfully.")
+                            log_info(f"Pending email with ID {email_id} sent successfully.\n")
                         except Exception as e:
-                            log_info(f"Failed to send pending email ID {email_id}: {e}")
+                            log_info(f"Failed to send pending email ID {email_id}: {e}\n")
             else:
-                log_info("Internet not connected. Waiting to retry pending emails.")
+                log_info("Internet not connected. Waiting to retry pending emails.\n")
         except Exception as e:
-            log_info(f"Error in retry_pending_emails: {e}")
+            log_info(f"Error in retry_pending_emails: {e}\n")
         time.sleep(60)
