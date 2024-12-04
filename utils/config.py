@@ -1,5 +1,3 @@
-import telebot
-
 # Telegram config
 TELEGRAM_API_TOKEN = '7596351438:AAFmXYszTYbB1bVt4XqlzfHclwJXKnYoruE'
 CHAT_ID = 160647701
