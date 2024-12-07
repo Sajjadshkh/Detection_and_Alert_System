@@ -1,11 +1,11 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QGridLayout
-from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtGui import QImage, QPixmap
 import sys
 import cv2
 import time
 from fire_detection.detector import detect_fire
 from queue import Queue
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QGridLayout
+from PyQt5.QtCore import QTimer, Qt
+from PyQt5.QtGui import QImage, QPixmap
 
 ALERT_INTERVAL = 90
 alert_queue = Queue()
@@ -20,7 +20,7 @@ video_sources = [
     "/Users/sajjad/Documents/GitHub/Detection_and_Alert_System/videos/random2.mp4"
     ]
 
-# دیکشنری برای نام اتاق‌ها
+# room names
 rooms = {
     "101": "Living Room",
     "102": "Kitchen",
@@ -109,7 +109,7 @@ def start_ui():
     grid_layout.setVerticalSpacing(0) 
 
     for window in windows:
-        window.label.setFixedSize(460, 300)
+        window.label.setFixedSize(500, 360)
 
     central_widget = QWidget()
     central_widget.setLayout(grid_layout)

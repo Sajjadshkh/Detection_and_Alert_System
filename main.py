@@ -1,3 +1,4 @@
+import cv2
 import threading
 import time
 from threading import Lock
@@ -11,7 +12,7 @@ from utils.database import save_email, save_telegram, save_sms, save_location
 from utils.location import get_dynamic_location
 from fire_detection.ui import start_ui, rooms, video_sources
 from fire_detection.detector import detect_fire
-import cv2
+
 
 # Initialize variables
 ALERT_INTERVAL = 90
