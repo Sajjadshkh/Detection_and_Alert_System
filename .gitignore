@@ -1,6 +1,9 @@
 # محیط مجازی
 venv/
 
+# ویدئو ها
+videos/
+
 # پوشه‌های IDE (برای PyCharm، VSCode و دیگر IDEها)
 .vscode/
 .idea/
