@@ -37,8 +37,22 @@ def create_table():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+
+
+    # table for location
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS locations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            latitude REAL NOT NULL,
+            longitude REAL NOT NULL,
+            status TEXT DEFAULT 'pending', -- وضعیت: pending یا sent
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     conn.commit()
     conn.close()
+
+
 
 
 # telegram methodes
@@ -121,5 +135,33 @@ def mark_sms_as_sent(sms_id):
     c.execute('''
         UPDATE sms SET status = "sent" WHERE id = ?
     ''', (sms_id,))
+    conn.commit()
+    conn.close()
+
+
+# location methodes
+def save_location(latitude, longitude):
+    conn = sqlite3.connect(DATABASE_PATH)
+    c = conn.cursor()
+    c.execute('''
+        INSERT INTO locations (latitude, longitude, status) VALUES (?, ?, 'pending')
+    ''', (latitude, longitude))
+    conn.commit()
+    conn.close()
+
+def get_pending_locations():
+    conn = sqlite3.connect(DATABASE_PATH)
+    c = conn.cursor()
+    c.execute('SELECT id, latitude, longitude FROM locations WHERE status = "pending"')
+    locations = c.fetchall()
+    conn.close()
+    return locations
+
+def mark_location_as_sent(location_id):
+    conn = sqlite3.connect(DATABASE_PATH)
+    c = conn.cursor()
+    c.execute('''
+        UPDATE locations SET status = "sent" WHERE id = ?
+    ''', (location_id,))
     conn.commit()
     conn.close()

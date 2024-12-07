@@ -11,8 +11,9 @@ from utils.internet_check import is_connected_to_internet
 from notifications.telegram_alert import start_polling, retry_pending_telegram
 from notifications.email_alert import retry_pending_emails
 from notifications.sms_alert import retry_pending_sms
-from utils.database import create_table, save_email, save_telegram, save_sms
-from notifications.location_alert import send_location_alert
+from utils.database import create_table, save_email, save_telegram, save_sms, save_location
+from notifications.location_alert import send_alert_with_location
+from utils.location import get_dynamic_location
 
 # Initialize variables
 fire_detected = False
@@ -32,11 +33,12 @@ alert_queue = Queue()
 # Lock for alert sending
 alert_lock = Lock()
 
+# Function to check internet connectivity and send alerts
 def send_alerts(message):
     with alert_lock:
         if is_connected_to_internet():
             try:
-                send_location_alert(message) 
+                send_alert_with_location(message)
                 log_info(f"Alert with location sent: {message}")
             except Exception as e:
                 log_info(f"Failed to send alert: {e}\n")
@@ -45,7 +47,11 @@ def send_alerts(message):
             save_telegram(message)  # Save telegram message
             save_email("Alert: Fire Detected", message)  # Save email message
             save_sms(message)   # Save sms message
+            latitude, longitude = get_dynamic_location()
+            if latitude is not None and longitude is not None:
+                save_location(latitude, longitude)
 
+# Function to process alerts from the queue
 def process_alerts():
     while True:
         message = alert_queue.get()
