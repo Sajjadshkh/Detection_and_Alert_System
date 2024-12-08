@@ -1,32 +1,32 @@
+def get_location():
+    latitude = 35.703798
+    longitude = 51.221327
+    return latitude, longitude
+
+
+
+# import geocoder
+# import gps
+
 # def get_dynamic_location():
-#     latitude = 35.703922
-#     longitude = 51.221079
-#     return latitude, longitude
-
-
-
-import geocoder
-import gps
-
-def get_dynamic_location():
-    try:
-        session = gps.gps(mode=gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
-        report = session.next()
-        if report['class'] == 'TPV' and hasattr(report, 'lat') and hasattr(report, 'lon'):
-            latitude = report.lat
-            longitude = report.lon
-            print(f"GPS Location: Latitude={latitude}, Longitude={longitude}")
-            return latitude, longitude
-    except Exception as e:
-        print(f"GPS Error: {e}")
-    g = geocoder.ip('me')
-    if g.ok:
-        latitude, longitude = g.latlng
-        print(f"IP Location: Latitude={latitude}, Longitude={longitude}")
-        return latitude, longitude
-    else:
-        print("Error getting location")
-        return None, None
+#     try:
+#         session = gps.gps(mode=gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
+#         report = session.next()
+#         if report['class'] == 'TPV' and hasattr(report, 'lat') and hasattr(report, 'lon'):
+#             latitude = report.lat
+#             longitude = report.lon
+#             print(f"GPS Location: Latitude={latitude}, Longitude={longitude}")
+#             return latitude, longitude
+#     except Exception as e:
+#         print(f"GPS Error: {e}")
+#     g = geocoder.ip('me')
+#     if g.ok:
+#         latitude, longitude = g.latlng
+#         print(f"IP Location: Latitude={latitude}, Longitude={longitude}")
+#         return latitude, longitude
+#     else:
+#         print("Error getting location")
+#         return None, None
 
 
 

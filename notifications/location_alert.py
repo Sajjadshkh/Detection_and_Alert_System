@@ -1,4 +1,4 @@
-from utils.location import get_dynamic_location
+from utils.location import get_location
 from utils.logger import log_info
 from notifications.telegram_alert import send_telegram_alert
 from notifications.email_alert import send_email_alert
@@ -15,7 +15,7 @@ from utils.internet_check import is_connected_to_internet
 
 
 def send_alert_with_location(message):
-    latitude, longitude = get_dynamic_location()
+    latitude, longitude = get_location()
 
     if latitude is None or longitude is None:
         log_info("Location data not available. Skipping alert.")

@@ -8,35 +8,50 @@ from notifications.telegram_alert import start_polling, retry_pending_telegram
 from notifications.email_alert import retry_pending_emails
 from notifications.sms_alert import retry_pending_sms
 from notifications.location_alert import send_alert_with_location
-from utils.database import save_email, save_telegram, save_sms, save_location
-from utils.location import get_dynamic_location
+from utils.database import save_email, save_telegram, save_sms, save_location, create_table
+from utils.location import get_location
 from fire_detection.ui import start_ui, rooms, video_sources
 from fire_detection.detector import detect_fire
 
+
+create_table()
 
 # Initialize variables
 ALERT_INTERVAL = 90
 alert_lock = Lock()  # Lock for alert sending
 
+# Global variable to track the last alert time
+last_alert_time = 0
+
 # Function to check internet connectivity and send alerts
 def send_alerts(message):
-    with alert_lock:
-        if is_connected_to_internet():
-            try:
-                send_alert_with_location(message)
-                log_info(f"Alert with location sent: {message}")
-            except Exception as e:
-                log_info(f"Failed to send alert: {e}")
-        else:
-            log_info("Internet not connected. Saving alert to database.")
-            save_telegram(message)
-            save_email("Alert: Fire Detected", message)
-            save_sms(message)
-            latitude, longitude = get_dynamic_location()
-            if latitude is not None and longitude is not None:
-                save_location(latitude, longitude)
+    global last_alert_time
+    current_time = time.time()
+    
+    # Check if ALERT_INTERVAL has passed
+    if current_time - last_alert_time >= ALERT_INTERVAL:
+        with alert_lock:  # Lock for thread safety
+            if is_connected_to_internet():
+                try:
+                    send_alert_with_location(message)
+                    log_info(f"Alert with location sent: {message}")
+                except Exception as e:
+                    log_info(f"Failed to send alert: {e}")
             else:
-                log_info("Failed to get dynamic location.")
+                log_info("Internet not connected. Saving alert to database.")
+                save_telegram(message)
+                save_email("Alert: Fire Detected", message)
+                save_sms(message)
+                latitude, longitude = get_location()
+                if latitude is not None and longitude is not None:
+                    save_location(latitude, longitude)
+                else:
+                    log_info("Failed to get dynamic location.")
+        
+        # Update the last alert time
+        last_alert_time = current_time
+    else:
+        log_info(f"Alert skipped. Next alert will be sent in {ALERT_INTERVAL - (current_time - last_alert_time):.2f} seconds.")
 
 
 # Function to process alerts directly without using a queue
