@@ -1,6 +1,7 @@
 import sys
 import cv2
 import os
+import time
 import numpy as np
 from fire_detection.detector import detect_fire
 from queue import Queue
@@ -14,12 +15,12 @@ alert_queue = Queue()
 
 
 video_sources = [
-    "/Users/sajjad/Documents/GitHub/Detection_and_Alert_System/videos/fire3.mp4",
     "/Users/sajjad/Documents/GitHub/Detection_and_Alert_System/videos/random1.mp4",
-    "/Users/sajjad/Documents/GitHub/Detection_and_Alert_System/videos/fire1.mp4",
+    "/Users/sajjad/Documents/GitHub/Detection_and_Alert_System/videos/random1.mp4",
+    "/Users/sajjad/Documents/GitHub/Detection_and_Alert_System/videos/fire2.mp4",
     "/Users/sajjad/Documents/GitHub/Detection_and_Alert_System/videos/random3.mp4",
     "/Users/sajjad/Documents/GitHub/Detection_and_Alert_System/videos/random1.mp4",
-    "/Users/sajjad/Documents/GitHub/Detection_and_Alert_System/videos/random2.mp4"
+    "/Users/sajjad/Documents/GitHub/Detection_and_Alert_System/videos/random1.mp4"
     ]
 
 # room names
@@ -42,29 +43,6 @@ class VideoWindow(QMainWindow):
         self.recording = False
         self.out = None
 
-
-        # save video button
-        self.save_button = QPushButton("Save Video", self)
-        self.save_button.clicked.connect(self.toggle_recording)
-        self.save_button.setStyleSheet("""
-            QPushButton {
-                color: #FFFFFF;
-                font-size: 16px;
-                font-weight: bold;
-                background-color: #6A1B9A;
-                border: 2px solid #AB47BC;
-                border-radius: 10px;
-                padding: 10px 20px;
-            }
-            QPushButton:hover {
-                background-color: #8E24AA;
-            }
-            QPushButton:pressed {
-                background-color: #4A148C;
-                border: 2px solid #CE93D8;
-            }
-        """)
-
     
         # name rooms label
         self.room_label = QLabel(rooms.get(self.room_id, "Unknown Room"), self)
@@ -84,7 +62,6 @@ class VideoWindow(QMainWindow):
         self.layout.addWidget(self.room_label)
         self.layout.addWidget(self.fire_status_label)
         self.layout.addWidget(self.label)
-        self.layout.addWidget(self.save_button)
 
         self.widget = QWidget(self)
         self.widget.setLayout(self.layout)
@@ -102,27 +79,23 @@ class VideoWindow(QMainWindow):
             return
         
 
-    def toggle_recording(self):
-        if not self.recording:
-            # Start recording
-            output_dir = os.path.join(os.getcwd(), "recordings")
-            os.makedirs(output_dir, exist_ok=True)
-            output_path = os.path.join(output_dir, f"recorded_{self.room_id}.avi")
+    def start_recording(self):
+        output_dir = os.path.join(os.getcwd(), "recordings")
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(output_dir, f"fire_{self.room_id}_{int(time.time())}.avi")
 
-            fourcc = cv2.VideoWriter_fourcc(*'XVID')
-            fps = int(self.cap.get(cv2.CAP_PROP_FPS)) or 30
-            frame_size = (int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        fps = int(self.cap.get(cv2.CAP_PROP_FPS)) or 30
+        frame_size = (int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
 
-            self.out = cv2.VideoWriter(output_path, fourcc, fps, frame_size)
-            self.recording = True
-            self.save_button.setText("Stop Recording")
-        else:
-            # Stop recording
-            self.recording = False
-            self.save_button.setText("Save Video")
-            if self.out:
-                self.out.release()
-                self.out = None
+        self.out = cv2.VideoWriter(output_path, fourcc, fps, frame_size)
+        self.recording = True
+
+    def stop_recording(self):
+        self.recording = False
+        if self.out:
+            self.out.release()
+            self.out = None
 
                 
 
@@ -158,6 +131,14 @@ class VideoWindow(QMainWindow):
                     border-radius: 8px;
                     padding: 5px;
                 """)
+
+                # start recording
+                if not self.recording:
+                    self.start_recording()
+
+                if self.recording and self.out:
+                    self.out.write(frame)
+
             else:
                 self.fire_status_label.setText("Status: Normal")
                 self.fire_status_label.setStyleSheet("""
@@ -168,8 +149,10 @@ class VideoWindow(QMainWindow):
                     border-radius: 8px;
                     padding: 5px;
                 """)
-            if self.recording and self.out:
-                self.out.write(frame)
+
+                # stop recording
+                if self.recording:
+                    self.stop_recording()
 
 
         # get the current size of the label
