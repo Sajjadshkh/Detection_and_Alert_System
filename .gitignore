@@ -4,6 +4,10 @@ venv/
 # ویدئو ها
 videos/
 
+# ویدیو های ذخیره شده
+recordings/
+
+
 # پوشه‌های IDE (برای PyCharm، VSCode و دیگر IDEها)
 .vscode/
 .idea/
