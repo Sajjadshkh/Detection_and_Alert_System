@@ -10,8 +10,9 @@ from notifications.sms_alert import retry_pending_sms
 from notifications.location_alert import send_alert_with_location
 from utils.database import save_email, save_telegram, save_sms, save_location, create_table
 from utils.location import get_location
-from fire_detection.ui import start_ui, rooms, video_sources
 from fire_detection.detector import detect_fire
+from ui.startui import start_ui
+from ui.config import video_sources, rooms
 
 
 create_table()
