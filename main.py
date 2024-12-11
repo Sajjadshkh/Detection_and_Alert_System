@@ -86,7 +86,6 @@ def start_thread(target_function, args=None, join_thread=False, retry_interval=5
         return None
 
 
-# Function to simulate a fire detection event
 def simulate_fire_detection(room_id):
     try:
         # Convert room_id to an index for video source
@@ -120,18 +119,32 @@ def simulate_fire_detection(room_id):
                 log_info(f"Error in fire detection for room {room_id}: {e}")
                 continue
 
+            current_time = time.time()
+            last_alert_time = last_alert_times.get(room_id, 0)
+            remaining_time = ALERT_INTERVAL - (current_time - last_alert_time)
+
             if fire_detected:
                 room_name = rooms.get(room_id, "Unknown Room")
                 message = f"Fire detected in {room_name} (Room {room_id})"
-                log_info(f"Fire detected: {message}")
-                process_alerts_directly(room_id, message)
-                fire_detected_last = True
+
+                # Only send alert and log if enough time has passed since the last alert
+                if current_time - last_alert_time >= ALERT_INTERVAL:
+                    log_info(f"Fire detected: {message}")
+                    process_alerts_directly(room_id, message)
+                    fire_detected_last = True
+                elif fire_detected_last:
+                    # If fire was detected previously and not enough time has passed, skip logging
+                    pass
             else:
                 if fire_detected_last:
                     log_info(f"Fire extinguished in {room_name} (Room {room_id}).")
                 fire_detected_last = False  # Reset if fire is not detected
 
-            time.sleep(0.5)  # Delay to reduce CPU usage
+            # Update last alert time after a valid alert is sent
+            if current_time - last_alert_time >= ALERT_INTERVAL:
+                last_alert_times[room_id] = current_time
+
+            time.sleep(1)  # Delay to reduce CPU usage
 
         frame.release()
         log_info(f"Finished fire detection for room {room_id}.")
