@@ -15,54 +15,59 @@ from ui.startui import start_ui
 from ui.config import video_sources, rooms
 
 
+# Create database tables
 create_table()
 
 # Initialize variables
-ALERT_INTERVAL = 90
+ALERT_INTERVAL = 90 
 alert_lock = Lock()  # Lock for alert sending
+last_alert_times = {}  # Track the last alert time for each room
 
-# Global variable to track the last alert time
-last_alert_time = 0
 
 # Function to check internet connectivity and send alerts
-def send_alerts(message):
-    global last_alert_time
+def send_alerts(room_id, message):
+    global last_alert_times
     current_time = time.time()
-    
-    # Check if ALERT_INTERVAL has passed
-    if current_time - last_alert_time >= ALERT_INTERVAL:
-        with alert_lock:  # Lock for thread safety
+
+    with alert_lock:  # Lock for thread safety
+        # Initialize the last alert time for the room if not present
+        if room_id not in last_alert_times:
+            last_alert_times[room_id] = 0
+
+        # Check if ALERT_INTERVAL has passed for this room
+        if current_time - last_alert_times[room_id] >= ALERT_INTERVAL:
             if is_connected_to_internet():
                 try:
                     send_alert_with_location(message)
-                    log_info(f"Alert with location sent: {message}")
+                    log_info(f"Alert with location sent for room {room_id}: {message}")
                 except Exception as e:
-                    log_info(f"Failed to send alert: {e}")
+                    log_info(f"Failed to send alert for room {room_id}: {e}")
             else:
-                log_info("Internet not connected. Saving alert to database.")
+                log_info(f"Internet not connected for room {room_id}. Saving alert to database.")
                 save_telegram(message)
-                save_email("Alert: Fire Detected", message)
+                save_email(f"Alert: Fire Detected in Room {room_id}", message)
                 save_sms(message)
                 latitude, longitude = get_location()
                 if latitude is not None and longitude is not None:
                     save_location(latitude, longitude)
                 else:
-                    log_info("Failed to get dynamic location.")
-        
-        # Update the last alert time
-        last_alert_time = current_time
-    else:
-        log_info(f"Alert skipped. Next alert will be sent in {ALERT_INTERVAL - (current_time - last_alert_time):.2f} seconds.")
+                    log_info(f"Failed to get dynamic location for room {room_id}.")
+
+            # Update the last alert time for this room
+            last_alert_times[room_id] = current_time
+        else:
+            remaining_time = ALERT_INTERVAL - (current_time - last_alert_times[room_id])
+            log_info(f"Alert skipped for room {room_id}. Next alert in {remaining_time:.2f} seconds.")
 
 
 # Function to process alerts directly without using a queue
-def process_alerts_directly(message):
+def process_alerts_directly(room_id, message):
     if message:  # Ensure message is not None or empty
-        log_info(f"Processing alert: {message}")
+        log_info(f"Processing alert for room {room_id}: {message}")
         try:
-            send_alerts(message)  # Attempt to send the alert
+            send_alerts(room_id, message)  # Attempt to send the alert
         except Exception as e:
-            log_info(f"Error processing alert: {e}")
+            log_info(f"Error processing alert for room {room_id}: {e}")
 
 
 # General thread starting function
@@ -88,7 +93,6 @@ def simulate_fire_detection(room_id):
         room_index = int(room_id) - 101  # Assume rooms start from 101
         video_source = video_sources[room_index]  # Access video for the specific room
 
-        # Check if video source is valid
         if not video_source:
             log_info(f"No video source found for room {room_id}. No detection performed.")
             return
@@ -101,31 +105,35 @@ def simulate_fire_detection(room_id):
 
         log_info(f"Started fire detection for room {room_id} using video source: {video_source}")
 
+        fire_detected_last = False
+
         while True:
-            ret, img = frame.read()  # Read the next frame
+            ret, img = frame.read()
             if not ret:
                 log_info(f"End of video for room {room_id} or failed to read frame.")
-                break  # Exit loop if no more frames are available
+                break
 
-            # Perform fire detection on the current frame
             fire_detected = False
             try:
                 _, fire_detected = detect_fire(img)  # Fire detection logic
             except Exception as e:
                 log_info(f"Error in fire detection for room {room_id}: {e}")
-                continue  # Skip this frame if there's an error
+                continue
 
             if fire_detected:
                 room_name = rooms.get(room_id, "Unknown Room")
                 message = f"Fire detected in {room_name} (Room {room_id})"
                 log_info(f"Fire detected: {message}")
-                process_alerts_directly(message)
-                break  # Exit loop after sending an alert
+                process_alerts_directly(room_id, message)
+                fire_detected_last = True
+            else:
+                if fire_detected_last:
+                    log_info(f"Fire extinguished in {room_name} (Room {room_id}).")
+                fire_detected_last = False  # Reset if fire is not detected
 
-            # Add delay to reduce CPU usage if needed
-            time.sleep(0.10)
-        
-        frame.release()  # Release the video source after processing
+            time.sleep(0.5)  # Delay to reduce CPU usage
+
+        frame.release()
         log_info(f"Finished fire detection for room {room_id}.")
     except Exception as e:
         log_info(f"Error in simulate_fire_detection for room {room_id}: {e}")
@@ -134,6 +142,7 @@ def simulate_fire_detection(room_id):
 # Start UI (ensure this is in the main thread)
 def start_ui_thread():
     start_ui()  # This will run in the main thread
+
 
 # Start background threads for notifications
 polling_thread = start_thread(start_polling)
@@ -145,12 +154,10 @@ retry_thread_sms = start_thread(retry_pending_sms)
 # Start UI and fire detection simulation in separate threads
 if __name__ == "__main__":
     # Start fire detection simulation for specific rooms
-    fire_detection_thread_101 = start_thread(simulate_fire_detection, args=("101",))
-    fire_detection_thread_102 = start_thread(simulate_fire_detection, args=("102",)) 
-    fire_detection_thread_103 = start_thread(simulate_fire_detection, args=("103",))
-    fire_detection_thread_104 = start_thread(simulate_fire_detection, args=("104",))
-    fire_detection_thread_105 = start_thread(simulate_fire_detection, args=("105",))
-    fire_detection_thread_106 = start_thread(simulate_fire_detection, args=("106",))
+    fire_detection_threads = []
+    for room_id in ["101", "102", "103", "104", "105", "106"]:
+        thread = start_thread(simulate_fire_detection, args=(room_id,))
+        fire_detection_threads.append(thread)
 
     # Start UI in the main thread
     start_ui_thread()

@@ -8,7 +8,18 @@ from PyQt5.QtGui import QImage, QPixmap
 from fire_detection.detector import detect_fire
 from ui.config import rooms
 
-class VideoWindow(QMainWindow):
+
+class VideoWindow(QMainWindow): 
+
+    def load_stylesheet(self):
+        """Load CSS stylesheet from file."""
+        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "styles", "styles.css")
+        if not os.path.exists(file_path):
+            print(f"Error: Stylesheet file not found at {file_path}")
+            return ""
+        with open(file_path, "r") as file:
+            return file.read()
+
     def __init__(self, video_source, window_name, room_id):
         super().__init__()
 
@@ -18,6 +29,8 @@ class VideoWindow(QMainWindow):
         self.last_alert_time = 0
         self.recording = False
         self.out = None
+
+        self.setStyleSheet(self.load_stylesheet())
 
         # Room label
         self.room_label = QLabel(rooms.get(self.room_id, "Unknown Room"), self)
@@ -53,31 +66,10 @@ class VideoWindow(QMainWindow):
             print(f"Error: Could not open video source {video_source}")
             return
 
-        # Predefined styles for the labels to avoid repetitive styling
-        self.normal_status_style = """
-            color: #4CAF50;
-            font-size: 14px;
-            font-weight: bold;
-            background-color: #E0E0E0;
-            border-radius: 8px;
-            padding: 5px;
-        """
-        self.fire_status_style = """
-            color: white;
-            font-size: 14px;
-            font-weight: bold;
-            background-color: #FF5722;
-            border-radius: 8px;
-            padding: 5px;
-        """
-        self.no_signal_status_style = """
-            color: #000000;
-            font-size: 14px;
-            font-weight: bold;
-            background-color: #FFCC00;
-            border-radius: 8px;
-            padding: 5px;
-        """
+        # Read the first frame to ensure we have video
+        ret, self.frame = self.cap.read()
+        if not ret:
+            self.frame = np.zeros((360, 640, 3), dtype=np.uint8)
 
     def start_recording(self):
         """Start recording the video when fire is detected."""
@@ -89,7 +81,7 @@ class VideoWindow(QMainWindow):
         os.makedirs(output_dir, exist_ok=True)
         
         output_path = os.path.join(output_dir, f"fire_{self.room_id}_{int(time.time())}.avi")
-        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        fourcc = cv2.VideoWriter_fourcc(*'H264')
         fps = int(self.cap.get(cv2.CAP_PROP_FPS)) or 30  # Default to 30 fps if not available
         frame_size = (int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
 
@@ -107,43 +99,47 @@ class VideoWindow(QMainWindow):
 
     def update_frame(self):
         """Capture video frame and process for fire detection."""
-        ret, frame = self.cap.read()
+        ret, self.frame = self.cap.read()
 
         # If video ends, reset to the first frame and continue
         if not ret:
             self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Restart video
-            ret, frame = self.cap.read()
+            ret, self.frame = self.cap.read()
+
             if not ret:
-                frame = np.zeros((360, 640, 3), dtype=np.uint8)
+                self.frame = np.zeros((360, 640, 3), dtype=np.uint8)
                 self.fire_status_label.setText("Status: No Signal")
-                self.fire_status_label.setStyleSheet(self.no_signal_status_style)
+                self.fire_status_label.setObjectName("no-signal-status")
+                self.fire_status_label.style().polish(self.fire_status_label)
+
+        # Fire detection
+        self.frame, fire_detected = detect_fire(self.frame)
+
+        # Update fire status and manage recording
+        if fire_detected:
+            self.fire_status_label.setText("Status: Fire Detected")
+            self.fire_status_label.setObjectName("fire-status")
+            self.fire_status_label.style().polish(self.fire_status_label)
+
+            if not self.recording:
+                self.start_recording()
+
+            if self.recording and self.out:
+                self.out.write(self.frame)
         else:
-            # Fire detection
-            frame, fire_detected = detect_fire(frame)
+            self.fire_status_label.setText("Status: Normal")
+            self.fire_status_label.setObjectName("normal-status")
+            self.fire_status_label.style().polish(self.fire_status_label)
 
-            # Update fire status and manage recording
-            if fire_detected:
-                self.fire_status_label.setText("Status: Fire Detected")
-                self.fire_status_label.setStyleSheet(self.fire_status_style)
-
-                if not self.recording:
-                    self.start_recording()
-
-                if self.recording and self.out:
-                    self.out.write(frame)
-            else:
-                self.fire_status_label.setText("Status: Normal")
-                self.fire_status_label.setStyleSheet(self.normal_status_style)
-
-                if self.recording:
-                    self.stop_recording()
+            if self.recording:
+                self.stop_recording()
 
         # Resize frame to fit the label
         label_width = self.label.width()
         label_height = self.label.height()
 
         # Resize the frame to fit the label size
-        frame_resized = cv2.resize(frame, (label_width, label_height), interpolation=cv2.INTER_LINEAR)
+        frame_resized = cv2.resize(self.frame, (label_width, label_height), interpolation=cv2.INTER_LINEAR)
 
         # Convert frame to QImage and then to QPixmap
         h, w, c = frame_resized.shape

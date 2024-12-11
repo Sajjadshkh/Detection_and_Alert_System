@@ -1,5 +1,6 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QGridLayout, QPushButton
+import os
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QGridLayout, QScrollArea
 from ui.video_window import VideoWindow
 from ui.config import video_sources
 
@@ -7,45 +8,19 @@ from ui.config import video_sources
 def start_ui():
     app = QApplication(sys.argv)
 
-    app.setStyleSheet("""
-    QMainWindow {
-        background-color: #f9f9f9;
-    }
-    QLabel {
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-        padding: 5px;
-        color: #333;
-    }
-    QTextEdit {
-        font-family: 'Courier New', Courier, monospace;
-        font-size: 12px;
-        background-color: #fff;
-        border: 1px solid #ccc;
-    }
-    QVBoxLayout {
-        margin: 10px;
-    }
-    QPushButton {
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-        font-weight: bold;
-        color: white;
-        background-color: #007BFF;
-        border: 2px solid #0056b3;
-        border-radius: 8px;
-        padding: 8px 12px;
-        margin: 5px 0;
-        text-align: center;
-    }
-    QPushButton:hover {
-        background-color: #0056b3;
-    }
-    QPushButton:pressed {
-        background-color: #003f7f;
-    }
-""")
+    def load_stylesheet():
+        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "styles", "styles.css")
+        if not os.path.exists(file_path):
+            print(f"Error: Stylesheet file not found at {file_path}")
+            return ""
+        with open(file_path, "r") as file:
+            return file.read()
 
+    app.setStyleSheet(load_stylesheet())
+
+    if not video_sources:
+        print("Error: No video sources provided.")
+        sys.exit(1)
 
     main_window = QMainWindow()
     main_window.setWindowTitle("Fire Detection and Alert System")
@@ -53,12 +28,14 @@ def start_ui():
 
     grid_layout = QGridLayout()
 
+    rows, cols = 3, 3
+
     # Add video windows to the grid layout based on video_sources
     for idx, video_source in enumerate(video_sources):
         room_id = str(101 + idx)  # Map video sources to room IDs
         video_window = VideoWindow(video_source, f"Video {idx + 1}", room_id)
-        row = idx // 3  # Define number of rows (fixed at 3 for now)
-        col = idx % 3  # Define number of columns (fixed at 3 for now)
+        row = idx // rows  # Define number of rows (fixed at 3 for now)
+        col = idx % cols  # Define number of columns (fixed at 3 for now)
         grid_layout.addWidget(video_window, row, col)
 
     grid_layout.setSpacing(5)
@@ -69,9 +46,18 @@ def start_ui():
     # Add grid layout to the main layout
     main_layout.addLayout(grid_layout)
 
+    scroll_area = QScrollArea()
+    central_widget = QWidget()
+    central_widget.setLayout(main_layout)
+    scroll_area.setWidgetResizable(True)
+    scroll_area.setWidget(central_widget)
+
+    main_window.setCentralWidget(scroll_area)
+
     central_widget = QWidget()
     central_widget.setLayout(main_layout)
     main_window.setCentralWidget(central_widget)
+    main_window.setGeometry(100, 100, 1100, 700)
 
     main_window.show()
     sys.exit(app.exec_())
