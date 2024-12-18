@@ -7,7 +7,7 @@ from utils.internet_check import is_connected_to_internet
 from notifications.telegram_alert import start_polling, retry_pending_telegram
 from notifications.email_alert import retry_pending_emails
 from notifications.sms_alert import retry_pending_sms
-from notifications.location_alert import send_alert_with_location
+from notifications.location_alert import send_alert_with_location, retry_pending_locations
 from utils.database import save_email, save_telegram, save_sms, save_location, create_table
 from utils.location import get_location
 from fire_detection.detector import detect_fire
@@ -162,6 +162,7 @@ polling_thread = start_thread(start_polling)
 retry_thread_email = start_thread(retry_pending_emails)
 retry_thread_telegram = start_thread(retry_pending_telegram)
 retry_thread_sms = start_thread(retry_pending_sms)
+retry_thread_locations = start_thread(retry_pending_locations)
 
 
 # Start UI and fire detection simulation in separate threads
