@@ -62,7 +62,7 @@ def retry_pending_telegram():
                     for alert in pending_telegram:
                         alert_id, message = alert
                         try:
-                            send_telegram_alert(message)
+                            # send_telegram_alert(message)
                             mark_telegram_as_sent(alert_id)
                             log_info(f"Pending Telegram message ID {alert_id} sent successfully.\n")
                         except Exception as e:

@@ -68,7 +68,7 @@ def retry_pending_emails():
                     for email in pending_emails:
                         email_id, subject, body = email
                         try:
-                            send_email_alert(subject, body)
+                            # send_email_alert(subject, body)
                             mark_email_as_sent(email_id)
                             log_info(f"Pending email with ID {email_id} sent successfully.\n")
                         except Exception as e:
