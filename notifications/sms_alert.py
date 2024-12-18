@@ -48,7 +48,7 @@ def retry_pending_sms():
                 for sms in pending_sms:
                     sms_id, message = sms
                     try:
-                        send_sms_alert(message) 
+                        # send_sms_alert(message) 
                         mark_sms_as_sent(sms_id)
                         log_info(f"SMS with ID {sms_id} sent successfully.")
                     except Exception as e:
