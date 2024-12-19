@@ -15,7 +15,6 @@ if project_root not in sys.path:
 
 # Initialize bot and lock
 bot = TeleBot(TELEGRAM_API_TOKEN)
-lock = Lock()
 
 @bot.message_handler(commands=['start'])
 def welcome_message(message):

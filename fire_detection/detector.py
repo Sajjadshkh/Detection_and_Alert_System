@@ -5,7 +5,7 @@ def detect_fire(frame):
     fire_detected = False  # Reset fire_detected at the start of each frame check
     
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    lower_bound = np.array([10, 120, 100])
+    lower_bound = np.array([15, 130, 130])
     upper_bound = np.array([35, 255, 255])
     
     mask = cv2.inRange(hsv, lower_bound, upper_bound)
@@ -21,3 +21,4 @@ def detect_fire(frame):
             fire_detected = True  # Set fire_detected to True when fire is detected
 
     return frame, fire_detected
+

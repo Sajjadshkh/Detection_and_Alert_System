@@ -19,8 +19,8 @@ from ui.config import video_sources, rooms
 create_table()
 
 # Initialize variables
-ALERT_INTERVAL = 90 
-alert_lock = Lock()  # Lock for alert sending
+ALERT_INTERVAL = 60 
+# alert_lock = Lock()  
 last_alert_times = {}  # Track the last alert time for each room
 
 
@@ -29,35 +29,35 @@ def send_alerts(room_id, message):
     global last_alert_times
     current_time = time.time()
 
-    with alert_lock:  # Lock for thread safety
-        # Initialize the last alert time for the room if not present
-        if room_id not in last_alert_times:
-            last_alert_times[room_id] = 0
+    # Initialize the last alert time for the room if not present
+    if room_id not in last_alert_times:
+        last_alert_times[room_id] = 0
 
-        # Check if ALERT_INTERVAL has passed for this room
-        if current_time - last_alert_times[room_id] >= ALERT_INTERVAL:
-            if is_connected_to_internet():
-                try:
-                    send_alert_with_location(message)
-                    log_info(f"Alert with location sent for room {room_id}: {message}")
-                except Exception as e:
-                    log_info(f"Failed to send alert for room {room_id}: {e}")
-            else:
-                log_info(f"Internet not connected for room {room_id}. Saving alert to database.")
-                save_telegram(message)
-                save_email(f"Alert: Fire Detected in Room {room_id}", message)
-                save_sms(message)
-                latitude, longitude = get_location()
-                if latitude is not None and longitude is not None:
-                    save_location(latitude, longitude)
-                else:
-                    log_info(f"Failed to get dynamic location for room {room_id}.")
-
-            # Update the last alert time for this room
-            last_alert_times[room_id] = current_time
+    # Check if ALERT_INTERVAL has passed for this room
+    if current_time - last_alert_times[room_id] >= ALERT_INTERVAL:
+        if is_connected_to_internet():
+            try:
+                send_alert_with_location(message)
+                log_info(f"Alert with location sent for room {room_id}: {message}")
+            except Exception as e:
+                log_info(f"Failed to send alert for room {room_id}: {e}")
         else:
-            remaining_time = ALERT_INTERVAL - (current_time - last_alert_times[room_id])
-            log_info(f"Alert skipped for room {room_id}. Next alert in {remaining_time:.2f} seconds.")
+            log_info(f"Internet not connected for room {room_id}. Saving alert to database.")
+            save_telegram(message)
+            save_email(f"Alert: Fire Detected in Room {room_id}", message)
+            save_sms(message)
+            latitude, longitude = get_location()
+            if latitude is not None and longitude is not None:
+                save_location(latitude, longitude)
+            else:
+                log_info(f"Failed to get dynamic location for room {room_id}.")
+
+        # Update the last alert time for this room
+        last_alert_times[room_id] = current_time
+    else:
+        remaining_time = ALERT_INTERVAL - (current_time - last_alert_times[room_id])
+        log_info(f"Alert skipped for room {room_id}. Next alert in {remaining_time:.2f} seconds.")
+
 
 
 # Function to process alerts directly without using a queue

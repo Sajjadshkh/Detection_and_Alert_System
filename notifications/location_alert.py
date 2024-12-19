@@ -24,12 +24,13 @@ def send_alert_with_location(message):
 
     google_maps_link = f"https://www.google.com/maps?q={latitude},{longitude}"
     combined_message = f"{message}\nLocation: {google_maps_link}"
+    combined_message2 = f"latitude={latitude}, longitude={longitude}"
 
     if is_connected_to_internet():
         try:
             send_telegram_alert(combined_message)
             send_email_alert("Alert: Fire Detected with Location", combined_message)
-            send_sms_alert(combined_message)
+            send_sms_alert(combined_message2)
             log_info(f"Alert with location sent: {combined_message}")
         except Exception as e:
             log_info(f"Error sending alert with location: {e}")
